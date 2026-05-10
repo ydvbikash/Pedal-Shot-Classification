@@ -1,172 +1,151 @@
 # Padel Game Analytics — Shot Classification System
 
-This project is a simple, explainable computer-vision prototype which analyzes padel gameplay video, detects/tracks players and the ball, estimates racket/swing activity near players, classifies basic shot types, and exports CSV/JSON results.
+## Project Overview
 
-## Why this approach?
+This project is a Computer Vision-based prototype that analyzes padel gameplay videos to detect players, track the ball, and classify basic shot types such as forehand, backhand, and smash.
 
-The assignment asks for a working prototype, not a perfect production system. Training a deep-learning shot classifier requires labelled padel data, GPU time, and more than a few days. Therefore, this project uses:
+The goal of this assignment is to demonstrate practical application of AI/ML concepts in a real-world sports analytics scenario.
 
-- **YOLOv8 pretrained model** for player detection.
-- **OpenCV HSV color tracking** for the yellow/green ball.
-- **Rule-based shot detection** using ball-player distance, ball speed, and direction change.
-- **Simple rule-based shot classification** into forehand, backhand, and smash/serve.
+---
 
-This makes the system practical, understandable, and easy to explain in an internship interview.
+##  Objectives
 
-## Features
+The system performs the following tasks:
 
-Mandatory tasks:
-
-- Detect and track players.
-- Detect and track ball.
-- Estimate racket/swing area near players using motion/region approximation.
-- Classify at least 2–3 shots:
+- Detect players in the video
+- Track the ball across frames
+- Identify shot events
+- Classify shots into:
   - Forehand
   - Backhand
-  - Smash/Serve
-- Export structured output:
-  - `shot_predictions.csv`
-  - `shot_predictions.json`
+  - Smash / Serve
+- Output structured results in CSV and JSON format
 
-Bonus tasks:
+---
 
-- Annotated output video.
-- Shot count analytics chart.
-- Rule-based logic for shot events.
+## Approach & Methodology
+
+### 1. Player Detection
+- Used a pretrained YOLOv8 model to detect players in each frame
+- Bounding boxes are used to track player positions
+
+### 2. Ball Tracking
+- Implemented using OpenCV
+- Color-based detection (HSV) to identify the ball
+- Contour detection used to track ball position frame-by-frame
+
+### 3. Shot Detection
+- A shot event is detected when:
+  - The ball is close to a player
+  - There is a sudden change in ball direction or speed
+
+### 4. Shot Classification (Rule-Based)
+- Forehand → Ball on right side of player
+- Backhand → Ball on left side of player
+- Smash/Serve → Ball contact at higher position with higher outgoing speed
+
+---
+
+##  Tech Stack
+
+- Python
+- OpenCV
+- Ultralytics YOLOv8 (pretrained)
+- NumPy
+- Pandas
+- Matplotlib
+
+---
 
 ## Project Structure
 
-```text
 padel-shot-classification/
 ├── main.py
-├── config.py
 ├── requirements.txt
 ├── README.md
 ├── src/
 │   ├── player_detector.py
 │   ├── ball_tracker.py
 │   ├── shot_classifier.py
-│   ├── video_annotator.py
 │   └── utils.py
-├── input/
-│   └── sample_video.mp4
-└── output/
-    ├── annotated_video.mp4
-    ├── shot_predictions.csv
-    ├── shot_predictions.json
-    └── shot_summary.png
-```
+├── output/
+│   ├── shot_predictions.csv
+│   ├── shot_predictions.json
+│   └── shot_summary.png
 
-## Setup
 
-Create a virtual environment:
+---
 
-```bash
-python -m venv venv
-source venv/bin/activate      # Mac/Linux
-# venv\Scripts\activate       # Windows
-```
+##  How to Run
 
-Install dependencies:
+### 1. Install dependencies
+pip3 install -r requirements.txt
 
-```bash
-pip install -r requirements.txt
-```
 
-## How to Run
+### 2. Add input video
+Place your video inside: input/sample_video.mp4
 
-Place the sample video inside the `input/` folder:
 
-```text
-input/sample_video.mp4
-```
+### 3. Run the program 
+python3 main.py --video input/sample_video.mp4 --output output
 
-Run the full pipeline:
 
-```bash
-python main.py --video input/sample_video.mp4 --output output
-```
+---
 
-For a quick test on the first 1500 frames:
+## Output
 
-```bash
-python main.py --video input/sample_video.mp4 --output output --max-frames 1500
-```
+The system generates:
 
-## Output Format
+- `shot_predictions.csv` → structured shot data  
+- `shot_predictions.json` → JSON format output  
+- `shot_summary.png` → basic visualization  
+- `annotated_video.mp4` → processed video with detections (shared separately)
 
-Example CSV/JSON fields:
+---
 
-| Column | Meaning |
-|---|---|
-| frame | Video frame where shot was detected |
-| timestamp_sec | Timestamp in seconds |
-| player_id | Nearest player at contact moment |
-| shot_type | forehand / backhand / smash_or_serve |
-| ball_x, ball_y | Ball location in video frame |
-| nearest_player_distance | Distance from ball to nearest player |
-| ball_speed | Ball movement speed between frames |
-| direction_change_deg | Direction change angle of ball movement |
+## Demo Video
 
-## Methodology
+👉 Add your Google Drive link here
 
-### 1. Player Detection
+---
 
-The system first detects people in each video frame. The preferred method is YOLOv8 pretrained on the COCO dataset. Since the model already knows the `person` class, no custom training is required.
+##  Limitations
 
-### 2. Ball Tracking
+- Ball detection may fail during fast motion or occlusion  
+- Racket is not explicitly detected (approximated using motion)  
+- Shot classification is rule-based, not learned  
+- Accuracy depends on video quality and camera angle  
 
-The padel ball is small and can be difficult for a general object detector. Instead, the system uses HSV color segmentation to find yellow/green circular objects. It filters candidates by area, radius, circularity, and closeness to the previous ball location.
-
-### 3. Racket/Swing Approximation
-
-The racket is very small in a wide camera view. Instead of pretending the system can perfectly detect it, this prototype estimates a probable racket/swing region around each player. The annotated video shows this region. In a future version, this can be replaced by a custom trained racket detector.
-
-### 4. Shot Event Detection
-
-A shot is detected when:
-
-```text
-ball is near a player
-AND
-ball speed or direction changes suddenly
-```
-
-This is based on the idea that racket contact changes the ball trajectory.
-
-### 5. Shot Classification
-
-The prototype classifies shots using simple rules:
-
-```text
-High contact point + high speed → smash_or_serve
-Ball on player's right side → forehand
-Ball on player's left side → backhand
-```
-
-This is an explainable baseline. It is not perfect, but it is suitable for a short internship assignment prototype.
-
-## Challenges Faced
-
-- The ball is very small and sometimes blends with the court or lighting.
-- The racket is difficult to detect from a wide CCTV-style camera angle.
-- Player pose and handedness are not available, so forehand/backhand classification is approximate.
-- Occlusion by glass/net/other players may cause missing ball detections.
+---
 
 ## Future Improvements
 
-- Train a custom YOLO model for padel ball and racket detection.
-- Use pose estimation with MediaPipe to identify body orientation and racket-hand side.
-- Use multi-object tracking such as ByteTrack or DeepSORT for stable player IDs.
-- Add bounce detection using ball vertical motion and court-line calibration.
-- Build a small Streamlit dashboard for shot analytics.
+- Train custom model for ball and racket detection  
+- Use deep learning for shot classification  
+- Improve player tracking with consistent IDs  
+- Use trajectory-based analysis for better accuracy  
+- Build real-time analytics dashboard  
 
-## Demo Files to Submit
+---
 
-Submit these files/folders:
+## Key Learning
 
-1. GitHub repository with this code.
-2. `output/annotated_video.mp4` as demo.
-3. `output/shot_predictions.csv` and `output/shot_predictions.json`.
-4. README explanation.
-5. If YOLO downloads `yolov8n.pt`, upload it to Google Drive or mention that it auto-downloads from Ultralytics on first run.
+This project demonstrates:
+
+- Practical Computer Vision pipeline design  
+- Integration of detection, tracking, and classification  
+- Use of pretrained models for rapid prototyping  
+- Importance of simple and explainable solutions  
+
+---
+
+## Keywords
+
+Padel, Computer Vision, Shot Classification, Sports Analytics, YOLO, OpenCV
+
+---
+
+## Author
+
+Bikash Yadav
+
